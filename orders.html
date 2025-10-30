@@ -47,12 +47,25 @@
   </div>
 
   <script>
-    // For demo purposes we reuse the same simulated userId as index.html
-    const userId = 1;
+    // Get logged-in user from localStorage
+    const currentUser = (() => { 
+      try { 
+        return JSON.parse(localStorage.getItem('agrinest_user')); 
+      } catch(_) { 
+        return null; 
+      } 
+    })();
+    const userId = currentUser && currentUser.id;
     const ordersDiv = document.getElementById('orders');
     const emptyDiv = document.getElementById('empty');
 
     async function loadOrders() {
+      if (!userId) {
+        alert('Please login to view your orders.');
+        window.location.href = '/newlogin.html';
+        return;
+      }
+      
       try {
         const res = await fetch(`http://localhost:5000/api/orders/${userId}`);
         const orders = await res.json();
