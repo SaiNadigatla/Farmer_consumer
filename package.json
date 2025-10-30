@@ -2,22 +2,25 @@
   "name": "farmerconsumer",
   "version": "1.0.0",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/amulya1977/AgriNest.git"
+    "url": "git+https://github.com/SaiNadigatla/Farmer_consumer.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Sai Nadigatla",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/amulya1977/AgriNest/issues"
+    "url": "https://github.com/SaiNadigatla/Farmer_consumer/issues"
   },
-  "homepage": "https://github.com/amulya1977/AgriNest#readme",
-  "description": "",
+  "homepage": "https://github.com/SaiNadigatla/Farmer_consumer#readme",
+  "description": "AgriNest - Farmer and Consumer Marketplace Platform",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
