@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Farmer Sales | AgriNest</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; }
+
+    header { background: #1c1c1c; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-weight: bold; color: #00cc66; text-decoration: none; }
+    .nav-links a { color: #fff; text-decoration: none; margin-left: 16px; }
+
+    .container { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 1.8rem; margin-bottom: 16px; }
+
+    .filters { display:flex; gap:12px; align-items:center; margin-bottom: 12px; }
+    .filters input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+
+    .card { background:#fff; border:1px solid #eee; border-radius:10px; padding:14px; margin-bottom:12px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    .col { flex:1 1 240px; }
+    .label { color:#666; font-size:.9rem; }
+    .value { font-weight:600; }
+
+    table { width:100%; border-collapse: collapse; margin-top:10px; }
+    th, td { border:1px solid #eee; padding:8px; text-align:left; }
+    th { background:#f4f4f4; }
+
+    .empty { text-align:center; color:#666; margin-top:24px; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="#" class="logo">AgriNest</a>
+    <div class="nav-links">
+      <a href="farmers.html">Dashboard</a>
+      <a href="newhome.html">Home</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1>Sales (My Customers & Orders)</h1>
+    <div class="filters">
+      <input type="text" id="search" placeholder="Search by customer or crop..." />
+    </div>
+    <div id="list"></div>
+    <div id="empty" class="empty" style="display:none;">No sales yet.</div>
+  </div>
+
+  <script>
+    const currentUser = (() => { try { return JSON.parse(localStorage.getItem('agrinest_user')); } catch(_) { return null; } })();
+    if (!currentUser || currentUser.role !== 'farmer') {
+      alert('Please login as a farmer to access this page.');
+      window.location.href = '/newlogin.html';
+    }
+    const farmerId = currentUser && currentUser.id;
+    const list = document.getElementById('list');
+    const empty = document.getElementById('empty');
+    const search = document.getElementById('search');
+    let rows = [];
+
+    async function loadSales() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/farmer/orders/${farmerId}`);
+        rows = await res.json();
+        render();
+      } catch (e) {
+        console.error('Failed to load sales:', e);
+        rows = [];
+        render();
+      }
+    }
+
+    function render() {
+      const q = search.value.trim().toLowerCase();
+
+      // Group all rows by order first
+      const orders = new Map();
+      for (const r of rows) {
+        if (!orders.has(r.order_id)) orders.set(r.order_id, { meta: r, items: [] });
+        orders.get(r.order_id).items.push(r);
+      }
+
+      const groups = [];
+      for (const [orderId, group] of orders.entries()) {
+        const meta = group.meta;
+        const items = group.items;
+        let keep = true;
+        let filteredItems = items;
+        if (q) {
+          const qInCustomer = String(meta.buyer_name||'').toLowerCase().includes(q) ||
+                              String(meta.buyer_email||'').toLowerCase().includes(q);
+          const qInOrder = String(orderId).toLowerCase().includes(q) ||
+                           new Date(meta.created_at).toLocaleString().toLowerCase().includes(q);
+          filteredItems = items.filter(it => String(it.crop_name||'').toLowerCase().includes(q));
+          keep = qInCustomer || qInOrder || filteredItems.length>0;
+        }
+        if (keep) groups.push({ meta, items: filteredItems });
+      }
+
+      if (groups.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      const html = groups.map(group => renderOrder(group.meta, group.items)).join('');
+      list.innerHTML = html;
+    }
+
+    function renderOrder(meta, items) {
+      const date = new Date(meta.created_at).toLocaleString();
+      const rowsHtml = items.map(it => `
+        <tr>
+          <td>${escapeHtml(it.crop_name)}</td>
+          <td>${it.quantity}</td>
+          <td>₹${Number(it.price).toFixed(2)}</td>
+          <td>₹${(Number(it.price) * Number(it.quantity)).toFixed(2)}</td>
+        </tr>
+      `).join('');
+
+      return `
+        <div class="card">
+          <div class="row">
+            <div class="col"><div class="label">Order #</div><div class="value">${meta.order_id}</div></div>
+            <div class="col"><div class="label">Date</div><div class="value">${date}</div></div>
+            <div class="col"><div class="label">Customer</div><div class="value">${escapeHtml(meta.buyer_name)} (${escapeHtml(meta.buyer_email)})</div></div>
+            <div class="col"><div class="label">Order Total</div><div class="value">₹${Number(meta.order_total).toFixed(2)}</div></div>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Item</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    search.addEventListener('input', render);
+    loadSales();
+  </script>
+</body>
+</html>

@@ -11,7 +11,7 @@
       box-sizing: border-box;
     }
 
-  html, body:before {
+  html, body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       height: 100%;
       width: 100%;
@@ -62,79 +62,110 @@
     }
 
     .product {
-      background: white;
-      border-radius: 10px;
-      padding: 12px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      width: 210px;
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: saturate(140%) blur(6px);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+      width: 220px;
       text-align: center;
-      transition: transform 0.3s ease;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      border: 1px solid rgba(255,255,255,0.6);
     }
 
     .product:hover {
-      transform: translateY(-5px);
+      transform: translateY(-6px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
     }
 
     .product img {
       width: 100%;
-      border-radius: 10px;
-      height: 130px;
+      border-radius: 12px;
+      height: 140px;
       object-fit: cover;
     }
 
     .product h3 {
-      margin: 10px 0 5px;
-      color: #2c3e50;
+      margin: 10px 0 6px;
+      color: #1f2d3a;
       font-size: 1.1rem;
+      font-weight: 700;
     }
 
     .product p {
       margin: 4px 0;
-      color: #555;
-      font-size: 0.9rem;
+      color: #444;
+      font-size: 0.92rem;
     }
 
     .product button {
-      background: #00cc66;
+      background: linear-gradient(180deg, #00d26a, #00b85b);
       color: white;
-      padding: 6px 12px;
+      padding: 8px 14px;
       border: none;
-      border-radius: 5px;
+      border-radius: 10px;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 700;
       font-size: 0.9rem;
+      box-shadow: 0 6px 14px rgba(0, 179, 89, 0.25);
     }
 
     .product button:hover {
       background-color: #00b359;
+      filter: brightness(1.02);
     }
 
     .cart {
       position: fixed;
       right: 20px;
-      top: 100px;
-      background: white;
-      border-radius: 10px;
-      padding: 15px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-      width: 280px;
+      bottom: 20px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: saturate(140%) blur(10px);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      width: 320px;
       max-height: 80vh;
       overflow-y: auto;
+      border: 1px solid rgba(255,255,255,0.6);
+      z-index: 50;
     }
 
     .cart h2 {
       margin-top: 0;
-      color: #1a1a1a;
+      color: #0f172a;
       font-size: 1.2rem;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      font-weight: 800;
     }
 
     .cart-item {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 10px;
       align-items: center;
-      margin: 10px 0;
+      margin: 14px 0;
       font-size: 0.95rem;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed rgba(0,0,0,0.12);
+    }
+
+    .cart-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .cart-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cart-line {
+      color: #475569;
+      font-size: 0.9rem;
     }
 
     .item-controls {
@@ -147,42 +178,77 @@
       background: #00cc66;
       color: white;
       border: none;
-      padding: 2px 8px;
-      font-weight: bold;
+      padding: 4px 10px;
+      font-weight: 800;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 8px;
     }
 
     .item-controls button:hover {
-      background-color: ##00cc66;
+      background-color: #00cc66;
     }
 
     .remove-btn {
-      background-color: red !important;
+      background-color: #ef4444 !important;
     }
 
     .cart-total {
-      font-weight: bold;
+      font-weight: 800;
       text-align: right;
-      margin-top: 10px;
-      color: #1a1a1a;
+      margin-top: 12px;
+      color: #0f172a;
+      font-size: 1.05rem;
     }
 
     .place-order {
-      margin-top: 15px;
+      margin-top: 16px;
       width: 100%;
-      background-color: #00cc66;
+      background: linear-gradient(180deg, #00d26a, #00b85b);
       color: white;
-      padding: 10px;
+      padding: 12px;
       border: none;
-      border-radius: 6px;
-      font-weight: bold;
+      border-radius: 12px;
+      font-weight: 800;
       cursor: pointer;
-      font-size: 0.95rem;
+      font-size: 1rem;
+      box-shadow: 0 10px 18px rgba(0, 179, 89, 0.25);
     }
 
     .place-order:hover {
       background-color: #00b359;
+    }
+
+    .filters {
+      max-width: 1040px;
+      margin: 0 auto 10px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: saturate(140%) blur(8px);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 14px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .filters-grid input,
+    .filters-grid select {
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: #fff;
+      outline: none;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .filters-grid input:focus,
+    .filters-grid select:focus {
+      border-color: #00b85b;
+      box-shadow: 0 0 0 4px rgba(0,184,91,0.15);
     }
 
     @media (max-width: 768px) {
@@ -227,10 +293,25 @@
     <div class="nav-links">
       <a href="newhome.html">Home</a>
       <a href="contact.html">Contact Us</a>
+      <a href="orders.html">My Orders</a>
     </div>
   </header>
 
   <h1>Farm Fresh Marketplace</h1>
+  <div class="filters">
+    <div class="filters-grid">
+      <input type="text" id="search" placeholder="Search crops or location" />
+      <input type="number" id="minPrice" placeholder="Min price" min="0" step="0.01" />
+      <input type="number" id="maxPrice" placeholder="Max price" min="0" step="0.01" />
+      <select id="sort">
+        <option value="">Sort by</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+        <option value="name_asc">Name: A → Z</option>
+        <option value="rating_desc">Top Rated</option>
+      </select>
+    </div>
+  </div>
   <div class="products" id="products"></div>
 
   <div class="cart">
@@ -245,12 +326,23 @@
     const cartItems = document.getElementById('cart-items');
     const totalDisplay = document.getElementById('cart-total');
     let total = 0;
-    const userId = 1; // Simulated user ID
-    const cartMap = new Map(); // cropId -> { name, price, quantity, maxQty }
+    const currentUser = (() => { try { return JSON.parse(localStorage.getItem('agrinest_user')); } catch(_) { return null; } })();
+    const userId = currentUser && currentUser.id;
+    const cartMap = new Map(); // cropId -> { name, price, quantity, maxQty, image }
 
     async function fetchProducts() {
       try {
-        const res = await fetch('http://localhost:5000/api/crops');
+        const q = document.getElementById('search').value.trim();
+        const minPrice = document.getElementById('minPrice').value;
+        const maxPrice = document.getElementById('maxPrice').value;
+        const sort = document.getElementById('sort').value;
+        const params = new URLSearchParams();
+        if (q) params.set('q', q);
+        if (minPrice !== '') params.set('minPrice', minPrice);
+        if (maxPrice !== '') params.set('maxPrice', maxPrice);
+        if (sort) params.set('sort', sort);
+        const url = 'http://localhost:5000/api/crops' + (params.toString() ? `?${params.toString()}` : '');
+        const res = await fetch(url);
         const data = await res.json();
         displayProducts(data);
       } catch (error) {
@@ -263,19 +355,35 @@
       products.forEach(product => {
         const div = document.createElement('div');
         div.className = 'product';
+        const imgUrl = `http://localhost:5000/${product.image_url}`;
+        const safeName = JSON.stringify(product.crop_name);
+        const safeImg = JSON.stringify(imgUrl);
         div.innerHTML = `
-          <img src="http://localhost:5000/${product.image_url}" alt="${product.crop_name}" />
+          <img src="${imgUrl}" alt=${safeName} />
           <h3>${product.crop_name}</h3>
-          <p>Price: ₹${product.price}</p>
+          <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin:6px 0;">
+            <span class="stars" data-avg="${product.avg_rating || 0}"></span>
+            <span style="color:#64748b;font-size:0.85rem;">(${product.rating_count || 0})</span>
+          </div>
+          <p style="font-weight:700;">₹${Number(product.price).toFixed(2)}</p>
           <p>Available: ${product.quantity}kg</p>
           <p>Location: ${product.location}</p>
-          <button onclick="addToCart(${product.id}, '${product.crop_name}', ${product.price}, ${product.quantity})">Add to Cart</button>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
+            <button class="btn-add" onclick="addToCart(${product.id}, ${safeName}, ${Number(product.price)}, ${product.quantity}, ${safeImg})">Add to Cart</button>
+            <button class="btn-rate" style="background:#f59e0b" onclick="openRate(${product.id})">Rate</button>
+          </div>
         `;
         productsContainer.appendChild(div);
+        // Extra safety: also bind programmatically in case inline handlers are blocked
+        const addBtn = div.querySelector('.btn-add');
+        if (addBtn) addBtn.addEventListener('click', () => addToCart(product.id, product.crop_name, Number(product.price), product.quantity, imgUrl));
+        const rateBtn = div.querySelector('.btn-rate');
+        if (rateBtn) rateBtn.addEventListener('click', () => openRate(product.id));
       });
+      renderAllStars();
     }
 
-    function addToCart(cropId, name, price, maxQty) {
+    function addToCart(cropId, name, price, maxQty, image) {
       const existing = cartMap.get(cropId);
       if (existing) {
         if (existing.quantity < maxQty) {
@@ -285,9 +393,17 @@
           return;
         }
       } else {
-        cartMap.set(cropId, { name, price, quantity: 1, maxQty });
+        cartMap.set(cropId, { name, price, quantity: 1, maxQty, image });
       }
       updateCart();
+      // quick visual feedback
+      try {
+        const el = document.querySelector('.cart');
+        if (el) {
+          el.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.35), 0 10px 30px rgba(0,0,0,0.2)';
+          setTimeout(()=>{ el.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)'; }, 180);
+        }
+      } catch(_){}
     }
 
     function updateCart() {
@@ -298,7 +414,11 @@
         const div = document.createElement('div');
         div.className = 'cart-item';
         div.innerHTML = `
-          <span>${item.name} (${item.quantity}kg)</span>
+          <img class="cart-thumb" src="${item.image}" alt="${item.name}">
+          <div class="cart-info">
+            <div style="font-weight:700;color:#0f172a;">${item.name}</div>
+            <div class="cart-line">₹${item.price.toFixed(2)} × ${item.quantity} = <strong>₹${(item.price*item.quantity).toFixed(2)}</strong></div>
+          </div>
           <div class="item-controls">
             <button onclick="changeQty(${id}, -1)">-</button>
             <button onclick="changeQty(${id}, 1)">+</button>
@@ -330,15 +450,97 @@
       cartMap.delete(cropId);
       updateCart();
     }
+    window.removeItem = removeItem;
 
-    function placeOrder() {
+    async function placeOrder() {
+      if (!userId) {
+        alert('Please login to place an order.');
+        window.location.href = '/newlogin.html';
+        return;
+      }
       if (cartMap.size === 0) return alert("Cart is empty!");
 
-      // Simulated backend call
-      alert("Order placed successfully!");
-      cartMap.clear();
-      updateCart();
+      const items = Array.from(cartMap.entries()).map(([cropId, item]) => ({ cropId, qty: item.quantity }));
+
+      try {
+        const res = await fetch('http://localhost:5000/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, items })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          return alert(data && data.message ? data.message : 'Checkout failed');
+        }
+
+        alert('Order placed successfully!');
+        cartMap.clear();
+        updateCart();
+        // Refresh products to reflect updated stock
+        await fetchProducts();
+      } catch (e) {
+        console.error('Checkout error:', e);
+        alert('Checkout failed');
+      }
     }
+
+    function renderAllStars() {
+      document.querySelectorAll('.stars').forEach(el => {
+        const avg = Number(el.getAttribute('data-avg')) || 0;
+        const full = Math.floor(avg);
+        const half = avg - full >= 0.5;
+        let stars = '';
+        for (let i=1;i<=5;i++) {
+          if (i<=full) stars += '★';
+          else if (i===full+1 && half) stars += '☆';
+          else stars += '☆';
+        }
+        el.textContent = stars;
+        el.style.color = '#f59e0b';
+        el.style.letterSpacing = '2px';
+        el.style.fontWeight = '800';
+      });
+    }
+
+    async function openRate(cropId) {
+      if (!userId) {
+        alert('Please login to rate products.');
+        window.location.href = '/newlogin.html';
+        return;
+      }
+      const r = prompt('Rate this crop (1-5):');
+      if (!r) return;
+      const rating = Number(r);
+      if (!Number.isFinite(rating) || rating<1 || rating>5) return alert('Please enter a number between 1 and 5');
+      try {
+        const res = await fetch(`http://localhost:5000/api/crops/${cropId}/rate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, rating })
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data && data.message ? data.message : 'Failed to save rating');
+        alert('Thanks for your rating!');
+        fetchProducts();
+      } catch(e) {
+        console.error('Rate error:', e);
+        alert('Failed to rate');
+      }
+    }
+
+    // Expose functions for inline onclick handlers
+    window.addToCart = addToCart;
+    window.changeQty = changeQty;
+    window.removeItem = removeItem;
+    window.placeOrder = placeOrder;
+    window.openRate = openRate;
+
+    // Wire up filters
+    document.getElementById('search').addEventListener('input', () => fetchProducts());
+    document.getElementById('minPrice').addEventListener('change', () => fetchProducts());
+    document.getElementById('maxPrice').addEventListener('change', () => fetchProducts());
+    document.getElementById('sort').addEventListener('change', () => fetchProducts());
 
     fetchProducts();
   </script>

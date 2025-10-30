@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Products | AgriNest</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body { height: 100%; width: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: rgba(0,0,0,0.6); }
+
+    header { background:#1c1c1c; color:#fff; padding: 18px 40px; display:flex; justify-content:space-between; align-items:center; }
+    .logo { color:#00cc66; font-weight:900; font-size: 1.4rem; text-decoration:none; }
+    .nav { display:flex; gap:18px; }
+    .nav a { color:#fff; text-decoration:none; }
+
+    h1 { text-align:center; color:#1a1a1a; margin: 26px 0 14px; }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; }
+
+    .panel { background: rgba(255,255,255,0.92); backdrop-filter: saturate(140%) blur(10px); border:1px solid rgba(255,255,255,0.6); border-radius:16px; box-shadow:0 12px 28px rgba(0,0,0,0.18); padding:16px; }
+
+    .toolbar { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom: 12px; }
+    .toolbar .hint { color:#475569; font-size: 0.95rem; }
+    .btn { background: linear-gradient(180deg,#00d26a,#00b85b); color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:800; cursor:pointer; box-shadow:0 6px 14px rgba(0,179,89,0.25); }
+    .btn:hover { filter: brightness(1.03); }
+
+    table { width:100%; border-collapse: collapse; background:#fff; border-radius:12px; overflow:hidden; }
+    thead { background:#f1f5f9; color:#0f172a; }
+    th, td { padding:12px; text-align:left; border-bottom:1px solid #e5e7eb; }
+    tbody tr:hover { background:#f8fafc; }
+
+    .grid { display:grid; grid-template-columns: 64px 1.2fr 1fr 1fr 1.4fr 1fr; align-items:center; gap:10px; }
+    .thumb { width:56px; height:56px; object-fit:cover; border-radius:8px; }
+    .input { width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px; }
+    .input:focus { outline:none; border-color:#00b85b; box-shadow:0 0 0 4px rgba(0,184,91,0.15); }
+    .cell-actions { display:flex; gap:8px; }
+    .btn-danger { background:#ef4444; }
+
+    .empty { text-align:center; color:#475569; padding:20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="logo" href="newhome.html">AgriNest</a>
+    <nav class="nav">
+      <a href="farmers.html">Farmer</a>
+      <a href="my-products.html">My Products</a>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <h1>My Products</h1>
+
+    <div class="panel">
+      <div class="toolbar">
+        <div class="hint">Manage your uploaded products. Edit fields inline and click Save. Use Delete to remove a product.</div>
+        <button class="btn" onclick="refreshList()">Refresh</button>
+      </div>
+
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <script>
+    const currentUser = (() => { try { return JSON.parse(localStorage.getItem('agrinest_user')); } catch(_) { return null; } })();
+    if (!currentUser || currentUser.role !== 'farmer') {
+      alert('Please login as a farmer to access this page.');
+      window.location.href = '/newlogin.html';
+    }
+    const farmerId = currentUser && currentUser.id; 
+    const list = document.getElementById('list');
+
+    async function refreshList() {
+      list.innerHTML = '<div class="empty">Loading...</div>';
+      try {
+        const res = await fetch(`http://localhost:5000/api/crops?farmerId=${farmerId}`);
+        const data = await res.json();
+        renderList(data);
+      } catch(e) {
+        list.innerHTML = '<div class="empty">Failed to load products</div>';
+        console.error(e);
+      }
+    }
+
+    function renderList(items) {
+      if (!items || !items.length) {
+        list.innerHTML = '<div class="empty">No products yet. Go to Farmers page and add your first product.</div>';
+        return;
+      }
+
+      const rows = items.map(p => `
+        <tr data-id="${p.id}">
+          <td><img class="thumb" src="http://localhost:5000/${p.image_url}" alt="${p.crop_name}"></td>
+          <td>${p.crop_name}</td>
+          <td><input class="input" type="number" step="0.01" value="${Number(p.price).toFixed(2)}" data-field="price"></td>
+          <td><input class="input" type="number" value="${p.quantity}" data-field="quantity"></td>
+          <td><input class="input" type="text" value="${p.location || ''}" data-field="location"></td>
+          <td class="cell-actions">
+            <button class="btn" onclick="saveRow(${p.id})">Save</button>
+            <button class="btn btn-danger" onclick="deleteRow(${p.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+
+      list.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Product</th>
+              <th>Price (₹)</th>
+              <th>Quantity (kg)</th>
+              <th>Location</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    async function saveRow(id) {
+      const tr = list.querySelector(`tr[data-id="${id}"]`);
+      if (!tr) return;
+      const payload = { farmerId };
+      tr.querySelectorAll('input').forEach(inp => {
+        const f = inp.getAttribute('data-field');
+        let val = inp.value;
+        if (f === 'price' || f === 'quantity') val = Number(val);
+        payload[f] = val;
+      });
+      try {
+        const res = await fetch(`http://localhost:5000/api/crops/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data && data.message ? data.message : 'Failed to update');
+        alert('Saved');
+        refreshList();
+      } catch(e) { console.error(e); alert('Failed to update'); }
+    }
+
+    async function deleteRow(id) {
+      if (!confirm('Delete this product?')) return;
+      try {
+        const res = await fetch(`http://localhost:5000/api/crops/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ farmerId })
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data && data.message ? data.message : 'Failed to delete');
+        refreshList();
+      } catch(e) { console.error(e); alert('Failed to delete'); }
+    }
+
+    refreshList();
+
+    // expose for debugging
+    window.refreshList = refreshList;
+    window.saveRow = saveRow;
+    window.deleteRow = deleteRow;
+  </script>
+</body>
+</html>

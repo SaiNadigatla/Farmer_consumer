@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Orders | AgriNest</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    header {
+      background-color: #1c1c1c; color: #fff; padding: 16px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .logo { font-weight: bold; color: #00cc66; text-decoration: none; }
+    .nav-links a { color: #fff; text-decoration: none; margin-left: 16px; }
+
+    .container { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 1.8rem; margin-bottom: 16px; }
+
+    .order { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .order-meta { color: #666; font-size: .95rem; }
+    .order-total { font-weight: bold; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
+    th { background: #f8f8f8; }
+
+    .empty { text-align: center; color: #666; margin-top: 32px; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="#" class="logo">AgriNest</a>
+    <div class="nav-links">
+      <a href="index.html">Shop</a>
+      <a href="newhome.html">Home</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1>My Orders</h1>
+    <div id="orders"></div>
+    <div id="empty" class="empty" style="display:none;">You have no orders yet.</div>
+  </div>
+
+  <script>
+    // For demo purposes we reuse the same simulated userId as index.html
+    const userId = 1;
+    const ordersDiv = document.getElementById('orders');
+    const emptyDiv = document.getElementById('empty');
+
+    async function loadOrders() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/orders/${userId}`);
+        const orders = await res.json();
+
+        if (!Array.isArray(orders) || orders.length === 0) {
+          emptyDiv.style.display = 'block';
+          ordersDiv.innerHTML = '';
+          return;
+        }
+
+        emptyDiv.style.display = 'none';
+        ordersDiv.innerHTML = orders.map(renderOrder).join('');
+      } catch (e) {
+        console.error('Failed to load orders:', e);
+        emptyDiv.style.display = 'block';
+        ordersDiv.innerHTML = '';
+      }
+    }
+
+    function renderOrder(o) {
+      const date = new Date(o.created_at).toLocaleString();
+      const rows = (o.items || []).map(it => `
+        <tr>
+          <td>${escapeHtml(it.crop_name)}</td>
+          <td>${it.quantity}</td>
+          <td>₹${Number(it.price).toFixed(2)}</td>
+          <td>₹${(Number(it.price) * Number(it.quantity)).toFixed(2)}</td>
+        </tr>
+      `).join('');
+
+      const itemsTable = `
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      return `
+        <div class="order">
+          <div class="order-header">
+            <div class="order-meta">Order #${o.id} • ${date}</div>
+            <div class="order-total">Total: ₹${Number(o.total).toFixed(2)}</div>
+          </div>
+          ${itemsTable}
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    loadOrders();
+  </script>
+</body>
+</html>
