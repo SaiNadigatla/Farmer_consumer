@@ -98,7 +98,7 @@
           <td><input class="input" type="text" value="${p.location || ''}" data-field="location"></td>
           <td class="cell-actions">
             <button class="btn" onclick="saveRow(${p.id})">Save</button>
-            <button class="btn btn-danger" onclick="deleteRow(${p.id})">Delete</button>
+            <button class="btn btn-danger" onclick="deleteRow(${p.id}, '${p.crop_name.replace(/'/g, '\'')}')">Delete</button>
           </td>
         </tr>
       `).join('');
@@ -143,8 +143,12 @@
       } catch(e) { console.error(e); alert('Failed to update'); }
     }
 
-    async function deleteRow(id) {
-      if (!confirm('Delete this product?')) return;
+    async function deleteRow(id, cropName) {
+      // Create a custom confirmation dialog
+      const shouldDelete = confirm(`Suggestion: Consider setting availability to 0 instead of deleting "${cropName}"\n\nClick OK to delete permanently or Cancel to keep the product.`);
+      
+      if (!shouldDelete) return;
+      
       try {
         const res = await fetch(`http://localhost:5000/api/crops/${id}`, {
           method: 'DELETE',
@@ -152,9 +156,12 @@
           body: JSON.stringify({ farmerId })
         });
         const data = await res.json();
-        if (!res.ok) return alert(data && data.message ? data.message : 'Failed to delete');
+        if (!res.ok) return alert(data?.message || 'Failed to delete');
         refreshList();
-      } catch(e) { console.error(e); alert('Failed to delete'); }
+      } catch(e) { 
+        console.error(e); 
+        alert('Failed to delete. Please try again.');
+      }
     }
 
     refreshList();

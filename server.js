@@ -32,7 +32,7 @@ const db = mysql.createConnection({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASS || '',
-  database: process.env.DB_NAME || 'farmer_dashboard',
+  database: process.env.DB_NAME || 'farmer_consumer',
 });
 
 db.connect((err) => {
@@ -99,7 +99,7 @@ function initDb() {
       quantity INT NOT NULL,
       price DECIMAL(10,2) NOT NULL,
       CONSTRAINT fk_oi_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-      CONSTRAINT fk_oi_crop FOREIGN KEY (crop_id) REFERENCES crops(id) ON DELETE RESTRICT
+      CONSTRAINT fk_oi_crop FOREIGN KEY (crop_id) REFERENCES crops(id) ON DELETE CASCADE
     ) ENGINE=InnoDB;
   `;
 
@@ -127,6 +127,62 @@ function initDb() {
           if (e4) console.error('Error creating orders table:', e4);
           db.query(createOrderItems, (e5) => {
             if (e5) console.error('Error creating order_items table:', e5);
+            
+            // Check if we need to update the constraint
+            const checkConstraint = `
+              SELECT COUNT(*) as needs_update 
+              FROM information_schema.TABLE_CONSTRAINTS c
+              JOIN information_schema.REFERENTIAL_CONSTRAINTS rc
+                ON c.CONSTRAINT_NAME = rc.CONSTRAINT_NAME
+                AND c.CONSTRAINT_SCHEMA = rc.CONSTRAINT_SCHEMA
+              WHERE c.CONSTRAINT_SCHEMA = DATABASE()
+                AND c.TABLE_NAME = 'order_items'
+                AND c.CONSTRAINT_NAME = 'fk_oi_crop'
+                AND c.CONSTRAINT_TYPE = 'FOREIGN KEY'
+                AND rc.DELETE_RULE != 'CASCADE';
+            `;
+
+            db.query(checkConstraint, (checkErr, results) => {
+              if (checkErr) {
+                console.error('Error checking constraint:', checkErr);
+                return;
+              }
+
+              const needsUpdate = results && results[0] && results[0].needs_update > 0;
+              
+              if (!needsUpdate) {
+                console.log('Constraint already has CASCADE rule');
+                return;
+              }
+
+              // First drop the existing constraint
+              const dropConstraint = 'ALTER TABLE order_items DROP FOREIGN KEY fk_oi_crop';
+              
+              db.query(dropConstraint, (dropErr) => {
+                if (dropErr) {
+                  console.error('Error dropping constraint:', dropErr);
+                  return;
+                }
+
+                // Then add it back with CASCADE
+                const addConstraint = `
+                  ALTER TABLE order_items 
+                  ADD CONSTRAINT fk_oi_crop 
+                  FOREIGN KEY (crop_id) 
+                  REFERENCES crops(id) 
+                  ON DELETE CASCADE;
+                `;
+
+                db.query(addConstraint, (addErr) => {
+                  if (addErr) {
+                    console.error('Error adding constraint with CASCADE:', addErr);
+                  } else {
+                    console.log('Successfully updated order_items constraint to use CASCADE');
+                  }
+                });
+              });
+            });
+
             db.query(createCropRatings, (e6) => {
               if (e6) console.error('Error creating crop_ratings table:', e6);
             // Ensure legacy 'crops' table has 'farmer_id' column and FK
@@ -210,18 +266,18 @@ app.get('/api/farmer/orders/:farmerId', (req, res) => {
     SELECT 
       o.id AS order_id,
       o.created_at,
-      o.total AS order_total,
-      u.name AS buyer_name,
-      u.email AS buyer_email,
+      COALESCE(o.total, 0) AS order_total,
+      COALESCE(u.name, 'Unknown') AS buyer_name,
+      COALESCE(u.email, '') AS buyer_email,
       c.id AS crop_id,
       c.crop_name,
-      oi.quantity,
-      oi.price,
-      (oi.quantity * oi.price) AS subtotal
-    FROM orders o
-    JOIN order_items oi ON oi.order_id = o.id
-    JOIN crops c ON c.id = oi.crop_id
-    JOIN user_credentials u ON u.id = o.user_id
+      COALESCE(oi.quantity, 0) AS quantity,
+      COALESCE(oi.price, 0) AS price,
+      (COALESCE(oi.quantity, 0) * COALESCE(oi.price, 0)) AS subtotal
+    FROM crops c
+    LEFT JOIN order_items oi ON c.id = oi.crop_id
+    LEFT JOIN orders o ON oi.order_id = o.id
+    LEFT JOIN user_credentials u ON o.user_id = u.id
     WHERE c.farmer_id = ?
     ORDER BY o.created_at DESC, o.id DESC`;
 
@@ -386,6 +442,24 @@ app.post('/api/crops/:cropId/rate', (req, res) => {
       const agg = rows && rows[0] ? rows[0] : { avg_rating: 0, rating_count: 0 };
       res.json({ message: 'Rating saved', avg_rating: Number(agg.avg_rating) || 0, rating_count: agg.rating_count });
     });
+  });
+});
+
+// Endpoint to fix foreign key constraint (run this once)
+app.get('/api/fix-constraint', (req, res) => {
+  const alterSql = `
+    ALTER TABLE order_items 
+    DROP FOREIGN KEY fk_oi_crop,
+    ADD CONSTRAINT fk_oi_crop 
+    FOREIGN KEY (crop_id) REFERENCES crops(id) 
+    ON DELETE CASCADE`;
+    
+  db.query(alterSql, (err) => {
+    if (err) {
+      console.error('Error updating constraint:', err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    res.json({ success: true, message: 'Constraint updated successfully' });
   });
 });
 
