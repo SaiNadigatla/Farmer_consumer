@@ -98,6 +98,7 @@
           <td><input class="input" type="text" value="${p.location || ''}" data-field="location"></td>
           <td class="cell-actions">
             <button class="btn" onclick="saveRow(${p.id})">Save</button>
+            <button class="btn" style="background:#0ea5e9;" onclick="restockRow(${p.id})">Restock</button>
             <button class="btn btn-danger" onclick="deleteRow(${p.id}, '${p.crop_name.replace(/'/g, '\'')}')">Delete</button>
           </td>
         </tr>
@@ -143,11 +144,50 @@
       } catch(e) { console.error(e); alert('Failed to update'); }
     }
 
+    async function restockRow(id) {
+      const qtyToAdd = prompt("Enter quantity to add to stock:");
+      if (!qtyToAdd) return;
+
+      const amount = Number(qtyToAdd);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return alert("Please enter a valid positive number.");
+      }
+
+      const tr = list.querySelector(`tr[data-id="${id}"]`);
+      if (!tr) return;
+
+      const currentQtyInput = tr.querySelector('input[data-field="quantity"]');
+      const currentQty = Number(currentQtyInput.value);
+      const newQuantity = currentQty + amount;
+
+      const payload = { 
+        farmerId,
+        quantity: newQuantity
+      };
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/crops/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data?.message || 'Failed to restock');
+        alert(`Successfully restocked. New quantity is ${newQuantity}.`);
+        refreshList();
+      } catch(e) { 
+        console.error(e); 
+        alert('Failed to restock. Please try again.');
+      }
+    }
+
     async function deleteRow(id, cropName) {
       // Create a custom confirmation dialog
-      const shouldDelete = confirm(`Suggestion: Consider setting availability to 0 instead of deleting "${cropName}"\n\nClick OK to delete permanently or Cancel to keep the product.`);
+      const shouldDelete = confirm(`Suggestion: Consider setting availability to 0 instead of deleting "${cropName}"
+
+Click OK to delete permanently or Cancel to keep the product.`);
       
-      if (!shouldDelete) return;
+      if (!shouldDelete) return; 
       
       try {
         const res = await fetch(`http://localhost:5000/api/crops/${id}`, {
@@ -170,6 +210,7 @@
     window.refreshList = refreshList;
     window.saveRow = saveRow;
     window.deleteRow = deleteRow;
+    window.restockRow = restockRow;
   </script>
 </body>
 </html>

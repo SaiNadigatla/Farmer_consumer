@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Farmer Dashboard | AgriNest</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; }
+
+    header { background: #1c1c1c; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-weight: bold; color: #00cc66; text-decoration: none; }
+    .nav-links a { color: #fff; text-decoration: none; margin-left: 16px; }
+
+    .container { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 1.8rem; margin-bottom: 16px; }
+
+    .filters { margin-bottom: 16px; }
+    .filters button { background: #007bff; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+    .filters button.active { background: #0056b3; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 16px; }
+    .stat-card h3 { font-size: 1.1rem; color: #666; margin-bottom: 8px; }
+    .stat-card p { font-size: 1.5rem; font-weight: bold; }
+
+    .chart-container { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="#" class="logo">AgriNest</a>
+    <div class="nav-links">
+      <a href="farmers.html">Dashboard</a>
+      <a href="farmer-orders.html">Sales</a>
+      <a href="newhome.html">Home</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1>My Dashboard</h1>
+    <div class="filters">
+      <button data-period="7d">Last 7 Days</button>
+      <button data-period="30d">Last 30 Days</button>
+      <button data-period="all" class="active">All Time</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Total Income</h3>
+        <p id="total-income">-</p>
+      </div>
+      <div class="stat-card">
+        <h3>Items Sold</h3>
+        <p id="items-sold">-</p>
+      </div>
+      <div class="stat-card">
+        <h3>Top Selling Crop</h3>
+        <p id="top-crop">-</p>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="income-chart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const currentUser = (() => { try { return JSON.parse(localStorage.getItem('agrinest_user')); } catch(_) { return null; } })();
+    if (!currentUser || currentUser.role !== 'farmer') {
+      alert('Please login as a farmer to access this page.');
+      window.location.href = '/newlogin.html';
+    }
+    const farmerId = currentUser && currentUser.id;
+
+    const totalIncomeEl = document.getElementById('total-income');
+    const itemsSoldEl = document.getElementById('items-sold');
+    const topCropEl = document.getElementById('top-crop');
+    const filters = document.querySelector('.filters');
+
+    let chart;
+
+    async function loadStats(period = 'all') {
+      try {
+        const res = await fetch(`http://localhost:5000/api/farmer/stats/${farmerId}?period=${period}`);
+        const stats = await res.json();
+        renderStats(stats);
+      } catch (e) {
+        console.error('Failed to load stats:', e);
+      }
+    }
+
+    function renderStats(stats) {
+      totalIncomeEl.textContent = `₹${stats.totalIncome.toFixed(2)}`;
+      itemsSoldEl.textContent = stats.totalItemsSold;
+
+      const topCrop = Object.entries(stats.topCrops).sort((a, b) => b[1] - a[1])[0];
+      topCropEl.textContent = topCrop ? `${topCrop[0]} (${topCrop[1]} sold)` : '-';
+
+      const chartData = {
+        labels: Object.keys(stats.incomeByDate),
+        datasets: [{
+          label: 'Income',
+          data: Object.values(stats.incomeByDate),
+          borderColor: '#00cc66',
+          backgroundColor: 'rgba(0, 204, 102, 0.1)',
+          fill: true,
+        }]
+      };
+
+      if (chart) {
+        chart.data = chartData;
+        chart.update();
+      } else {
+        const ctx = document.getElementById('income-chart').getContext('2d');
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: chartData,
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+    }
+
+    filters.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') {
+        const period = e.target.dataset.period;
+        filters.querySelector('.active').classList.remove('active');
+        e.target.classList.add('active');
+        loadStats(period);
+      }
+    });
+
+    loadStats();
+  </script>
+</body>
+</html>

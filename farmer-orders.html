@@ -24,6 +24,11 @@
     .label { color:#666; font-size:.9rem; }
     .value { font-weight:600; }
 
+    .status-btn {
+      background: #28a745; color: #fff; border: none; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-size: .8rem;
+    }
+    .status-delivered { color: #28a745; font-weight: bold; }
+
     table { width:100%; border-collapse: collapse; margin-top:10px; }
     th, td { border:1px solid #eee; padding:8px; text-align:left; }
     th { background:#f4f4f4; }
@@ -114,14 +119,20 @@
 
     function renderOrder(meta, items) {
       const date = new Date(meta.created_at).toLocaleString();
-      const rowsHtml = items.map(it => `
+
+      const rowsHtml = items.map(it => {
+        const statusBtn = it.delivery_status === 'pending' 
+          ? `<button class="status-btn" data-item-id="${it.order_item_id}">Mark as Delivered</button>`
+          : '<span class="status-delivered">Delivered</span>';
+        return `
         <tr>
           <td>${escapeHtml(it.crop_name)}</td>
           <td>${it.quantity}</td>
           <td>₹${Number(it.price).toFixed(2)}</td>
           <td>₹${(Number(it.price) * Number(it.quantity)).toFixed(2)}</td>
+          <td>${statusBtn}</td>
         </tr>
-      `).join('');
+      `}).join('');
 
       return `
         <div class="card">
@@ -129,17 +140,42 @@
             <div class="col"><div class="label">Order #</div><div class="value">${meta.order_id}</div></div>
             <div class="col"><div class="label">Date</div><div class="value">${date}</div></div>
             <div class="col"><div class="label">Customer</div><div class="value">${escapeHtml(meta.buyer_name)} (${escapeHtml(meta.buyer_email)})</div></div>
+            <div class="col"><div class="label">Location</div><div class="value">${escapeHtml(meta.buyer_location)}</div></div>
             <div class="col"><div class="label">Order Total</div><div class="value">₹${Number(meta.order_total).toFixed(2)}</div></div>
           </div>
           <table>
             <thead>
-              <tr><th>Item</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
+              <tr><th>Item</th><th>Qty</th><th>Price</th><th>Subtotal</th><th>Status</th></tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>
       `;
     }
+
+    async function updateStatus(itemId, status) {
+      try {
+        const res = await fetch(`http://localhost:5000/api/order-items/${itemId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (!res.ok) throw new Error('Failed to update status');
+        loadSales(); // Reload to show updated status
+      } catch (e) {
+        console.error('Update failed:', e);
+        alert('Could not update order status.');
+      }
+    }
+
+    list.addEventListener('click', (e) => {
+      if (e.target.matches('.status-btn')) {
+        const itemId = e.target.dataset.itemId;
+        if (confirm(`Mark this item as delivered?`)) {
+          updateStatus(itemId, 'delivered');
+        }
+      }
+    });
 
     function escapeHtml(str) {
       return String(str)

@@ -98,6 +98,7 @@ function initDb() {
       crop_id INT NOT NULL,
       quantity INT NOT NULL,
       price DECIMAL(10,2) NOT NULL,
+      delivery_status ENUM('pending', 'delivered') NOT NULL DEFAULT 'pending',
       CONSTRAINT fk_oi_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
       CONSTRAINT fk_oi_crop FOREIGN KEY (crop_id) REFERENCES crops(id) ON DELETE CASCADE
     ) ENGINE=InnoDB;
@@ -185,41 +186,30 @@ function initDb() {
 
             db.query(createCropRatings, (e6) => {
               if (e6) console.error('Error creating crop_ratings table:', e6);
-            // Ensure legacy 'crops' table has 'farmer_id' column and FK
-            const checkFarmerCol = `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS 
-                                   WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'crops' AND COLUMN_NAME = 'farmer_id'`;
-            db.query(checkFarmerCol, ['farmer_dashboard'], (chkErr2, rows2) => {
-              if (chkErr2) {
-                console.error('Error checking crops.farmer_id column:', chkErr2);
-              } else {
-                const hasFarmer = rows2 && rows2[0] && rows2[0].cnt > 0;
-                if (!hasFarmer) {
-                  const alterCrops = `ALTER TABLE crops ADD COLUMN farmer_id INT NULL AFTER image_url`;
-                  db.query(alterCrops, (altErr1) => {
-                    if (altErr1) console.error('Error adding farmer_id to crops:', altErr1);
-                  });
+            const dbName = process.env.DB_NAME || 'farmer_consumer';
+
+            // Migration: Drop delivery_status from orders table if it exists
+            const checkOrdersDeliveryStatus = `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'delivery_status'`;
+            db.query(checkOrdersDeliveryStatus, [dbName], (err, rows) => {
+                if (!err && rows[0].cnt > 0) {
+                    const alterOrders = `ALTER TABLE orders DROP COLUMN delivery_status`;
+                    db.query(alterOrders, (altErr) => {
+                        if (altErr) console.error('Error dropping delivery_status from orders:', altErr);
+                        else console.log('Dropped delivery_status column from orders table.');
+                    });
                 }
-              }
             });
-            // Ensure legacy 'orders' table has 'total' column
-            const checkTotalCol = `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS 
-                                   WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'total'`;
-            db.query(checkTotalCol, ['farmer_dashboard'], (chkErr, rows) => {
-              if (chkErr) {
-                console.error('Error checking orders.total column:', chkErr);
-                return; // non-fatal
-              }
-              const hasTotal = rows && rows[0] && rows[0].cnt > 0;
-              if (!hasTotal) {
-                const alterSql = `ALTER TABLE orders ADD COLUMN total DECIMAL(10,2) NOT NULL DEFAULT 0`;
-                db.query(alterSql, (altErr) => {
-                  if (altErr) {
-                    console.error('Error adding total column to orders:', altErr);
-                  } else {
-                    console.log('Added missing total column to orders table.');
-                  }
-                });
-              }
+
+            // Migration: Add delivery_status to order_items table if it doesn't exist
+            const checkOrderItemsDeliveryStatus = `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'order_items' AND COLUMN_NAME = 'delivery_status'`;
+            db.query(checkOrderItemsDeliveryStatus, [dbName], (err, rows) => {
+                if (!err && rows[0].cnt === 0) {
+                    const alterOrderItems = `ALTER TABLE order_items ADD COLUMN delivery_status ENUM('pending', 'delivered') NOT NULL DEFAULT 'pending'`;
+                    db.query(alterOrderItems, (altErr) => {
+                        if (altErr) console.error('Error adding delivery_status to order_items:', altErr);
+                        else console.log('Added delivery_status column to order_items table.');
+                    });
+                }
             });
             });
           });
@@ -265,19 +255,22 @@ app.get('/api/farmer/orders/:farmerId', (req, res) => {
   const sql = `
     SELECT 
       o.id AS order_id,
+      oi.id AS order_item_id,
       o.created_at,
+      oi.delivery_status,
       COALESCE(o.total, 0) AS order_total,
       COALESCE(u.name, 'Unknown') AS buyer_name,
       COALESCE(u.email, '') AS buyer_email,
+      c.location AS buyer_location,
       c.id AS crop_id,
       c.crop_name,
       COALESCE(oi.quantity, 0) AS quantity,
       COALESCE(oi.price, 0) AS price,
       (COALESCE(oi.quantity, 0) * COALESCE(oi.price, 0)) AS subtotal
     FROM crops c
-    LEFT JOIN order_items oi ON c.id = oi.crop_id
-    LEFT JOIN orders o ON oi.order_id = o.id
-    LEFT JOIN user_credentials u ON o.user_id = u.id
+    JOIN order_items oi ON c.id = oi.crop_id
+    JOIN orders o ON oi.order_id = o.id
+    JOIN user_credentials u ON o.user_id = u.id
     WHERE c.farmer_id = ?
     ORDER BY o.created_at DESC, o.id DESC`;
 
@@ -287,6 +280,92 @@ app.get('/api/farmer/orders/:farmerId', (req, res) => {
       return res.status(500).json({ message: 'Failed to fetch farmer sales history' });
     }
     res.json(rows);
+  });
+});
+
+// API to update order item status
+app.put('/api/order-items/:itemId/status', (req, res) => {
+  const { itemId } = req.params;
+  const { status } = req.body;
+
+  if (!status || !['pending', 'delivered'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status' });
+  }
+
+  const query = 'UPDATE order_items SET delivery_status = ? WHERE id = ?';
+  db.query(query, [status, itemId], (err, result) => {
+    if (err) {
+      console.error('Error updating order item status:', err);
+      return res.status(500).json({ message: 'Failed to update order item status' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Order item not found' });
+    }
+    res.json({ message: 'Order item status updated successfully' });
+  });
+});
+
+// Get farmer statistics
+app.get('/api/farmer/stats/:farmerId', (req, res) => {
+  const farmerId = Number(req.params.farmerId);
+  if (!Number.isFinite(farmerId)) {
+    return res.status(400).json({ message: 'Invalid farmerId' });
+  }
+
+  const period = req.query.period || 'all'; // '7d', '30d', 'all'
+  let sinceDate = new Date('1970-01-01');
+  if (period === '7d') {
+    sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - 7);
+  } else if (period === '30d') {
+    sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - 30);
+  }
+
+  const sql = `
+    SELECT
+      oi.price,
+      oi.quantity,
+      o.created_at,
+      c.crop_name
+    FROM order_items oi
+    JOIN crops c ON oi.crop_id = c.id
+    JOIN orders o ON oi.order_id = o.id
+    WHERE c.farmer_id = ? AND oi.delivery_status = 'delivered' AND o.created_at >= ?
+    ORDER BY o.created_at ASC
+  `;
+
+  db.query(sql, [farmerId, sinceDate], (err, rows) => {
+    if (err) {
+      console.error('Farmer stats error:', err);
+      return res.status(500).json({ message: 'Failed to fetch farmer statistics' });
+    }
+
+    const stats = {
+      totalIncome: 0,
+      totalItemsSold: 0,
+      incomeByDate: {},
+      topCrops: {},
+    };
+
+    rows.forEach(row => {
+      const income = Number(row.price) * Number(row.quantity);
+      stats.totalIncome += income;
+      stats.totalItemsSold += Number(row.quantity);
+
+      const date = new Date(row.created_at).toISOString().split('T')[0];
+      if (!stats.incomeByDate[date]) {
+        stats.incomeByDate[date] = 0;
+      }
+      stats.incomeByDate[date] += income;
+
+      if (!stats.topCrops[row.crop_name]) {
+        stats.topCrops[row.crop_name] = 0;
+      }
+      stats.topCrops[row.crop_name] += Number(row.quantity);
+    });
+
+    res.json(stats);
   });
 });
 
@@ -714,7 +793,7 @@ app.get('/api/orders/:userId', (req, res) => {
 
     const orderIds = orders.map(o => o.id);
     const placeholders = orderIds.map(() => '?').join(',');
-    const qItems = `SELECT oi.order_id, oi.crop_id, oi.quantity, oi.price, c.crop_name
+    const qItems = `SELECT oi.order_id, oi.crop_id, oi.quantity, oi.price, c.crop_name, oi.delivery_status, oi.id as order_item_id
                     FROM order_items oi
                     JOIN crops c ON c.id = oi.crop_id
                     WHERE oi.order_id IN (${placeholders})
@@ -727,7 +806,7 @@ app.get('/api/orders/:userId', (req, res) => {
       const byOrder = new Map();
       for (const o of orders) byOrder.set(o.id, { id: o.id, total: o.total, created_at: o.created_at, items: [] });
       for (const it of items) {
-        byOrder.get(it.order_id).items.push({ crop_id: it.crop_id, crop_name: it.crop_name, quantity: it.quantity, price: it.price });
+        byOrder.get(it.order_id).items.push({ crop_id: it.crop_id, crop_name: it.crop_name, quantity: it.quantity, price: it.price, delivery_status: it.delivery_status, order_item_id: it.order_item_id });
       }
       res.json(Array.from(byOrder.values()));
     });

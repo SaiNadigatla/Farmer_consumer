@@ -93,6 +93,7 @@
           <td>${it.quantity}</td>
           <td>₹${Number(it.price).toFixed(2)}</td>
           <td>₹${(Number(it.price) * Number(it.quantity)).toFixed(2)}</td>
+          <td>${escapeHtml(it.delivery_status || 'pending')}</td>
         </tr>
       `).join('');
 
@@ -104,6 +105,7 @@
               <th>Qty</th>
               <th>Price</th>
               <th>Subtotal</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>

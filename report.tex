@@ -1,0 +1,432 @@
+\documentclass[12pt,a4paper]{article}
+
+% --- PACKAGES ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{newtxtext,newtxmath} % Modern Times-like font
+\usepackage{setspace}
+\usepackage{booktabs} % For professional tables
+\usepackage{xcolor}   % For colors in listings
+\usepackage{hyperref} % Should generally be the last package
+
+% --- DOCUMENT AND PAGE GEOMETRY ---
+\geometry{a4paper, margin=1in}
+\onehalfspacing % Set 1.5 line spacing
+
+% --- CODE LISTING STYLE ---
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+% --- HYPERREF SETUP ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+% --- TITLE PAGE INFORMATION ---
+\title 중{
+  {\bfseries AgriNest: A Farmer-Consumer Marketplace} \\
+  \vspace{1cm}
+  {\large Course: Database Management Systems (CS306)}
+}
+\author 중{
+  \textbf{Group Members:} \\
+  \vspace{0.5cm}
+  \begin{tabular}{cc}
+    \toprule
+    \textbf{Name} & \textbf{Roll Number} \\
+    \midrule
+    Nadigatla Venkata Sai & 123CS0041 \\
+    Jallu Srivardhan & 123CS0049 \\
+    \bottomrule
+  \end{tabular}
+}
+\date{\today}
+
+
+\begin{document}
+
+% --- CUSTOM TITLE PAGE ---
+\begin{titlepage}
+  \centering
+  \vspace*{1cm}
+  % \includegraphics[width=0.25\textwidth]{logo1.jpg} % Uncomment if you have a logo
+  \vspace{0.5cm}
+  {\scshape\bfseries INDIAN INSTITUTE OF INFORMATION TECHNOLOGY \par}
+  {\scshape\bfseries DESIGN AND MANUFACTURING KURNOOL \par}
+  \vfill
+  {\Huge \bfseries AgriNest: A Farmer-Consumer Marketplace \par}
+  \vspace{1cm}
+  {\large Course: \textbf{Database Management Systems (CS306)} \par}
+  \vfill
+  {\Large \textbf{Submitted By:}\par}
+  \vspace{0.5cm}
+  \Large
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Name} & \textbf{Roll Number} \\
+    \midrule
+    Nadigatla Venkata Sai & 123CS0041 \\
+    Jallu Srivardhan & 123CS0049 \\
+    \bottomrule
+  \end{tabular}
+  \vfill
+  {\large \today \par}
+\end{titlepage}
+
+\begin{abstract}
+This report details the design, development, and implementation of AgriNest, a web-based marketplace connecting farmers directly with consumers. The project is developed as part of a Database Management Systems (DBMS) course. It focuses on the database design, including the ER diagram, relational schema, and the SQL queries that power the application. The backend is built with Node.js and Express, and it uses a MySQL database to store and manage the data. The primary goal of this project is to create a platform that is not only functional but also scalable and maintainable, with a strong emphasis on data integrity and security. Recent updates include per-item delivery status tracking and a new farmer dashboard for income and sales statistics.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Problem Statement}
+The traditional food supply chain often involves multiple intermediaries, such as wholesalers, distributors, and retailers. While these intermediaries play a role in bringing food from the farm to the table, they also add significant costs to the final product. This results in a situation where consumers pay high prices for food, while farmers receive only a small fraction of the retail price. This inefficiency in the supply chain not only affects the financial viability of small-scale farms but also creates a disconnect between consumers and the source of their food.
+
+Furthermore, the lack of transparency in the traditional system means that consumers have limited information about the farming practices, the origin of the food, and its quality. This has led to a growing demand for locally sourced, fresh, and organic produce. Farmers, on the other hand, struggle to reach a wider market and often lack the resources and technical expertise to market their products effectively.
+
+The objective of this project is to address these challenges by developing a web-based platform that facilitates a direct connection between farmers and consumers. By eliminating the intermediaries, AgriNest aims to create a more equitable and transparent food system that benefits both producers and consumers.
+
+\section{Introduction}
+AgriNest is a comprehensive e-commerce solution designed to serve as a digital bridge between agricultural producers and end consumers. In an era where technology is reshaping every industry, the agricultural sector is ripe for a digital transformation that empowers small-scale farmers and provides consumers with better choices. Our platform is a direct response to the growing trend of consumers seeking fresh, local, and sustainably grown food.
+
+The application is built as a full-stack web application, with a clear separation between the frontend and the backend. The frontend, which is the user-facing part of the application, is designed to be intuitive and easy to use. It allows consumers to browse products, view details, and make purchases. The backend is the engine of the application, responsible for handling business logic, processing data, and interacting with the database.
+
+The heart of the AgriNest platform is its database, which is built on MySQL. The database is meticulously designed to store and manage all the critical information that keeps the marketplace running. This includes user profiles, product catalogs, inventory levels, customer orders, and product ratings. The design of the database schema is crucial for ensuring data integrity, scalability, and performance.
+
+This report provides a detailed account of the database design and implementation for the AgriNest project. We will explore the entity-relationship model, the relational schema, and the various SQL queries used to perform operations on the database. We will also discuss the overall architecture of the system and the technologies used in its development.
+
+\section{Literature Survey}
+A thorough review of existing literature and platforms reveals a growing interest in farm-to-consumer e-commerce. These platforms can be broadly categorized as follows:
+
+\begin{itemize}
+    \item \textbf{Subscription-based Models (CSA):} Community Supported Agriculture (CSA) is a popular model where consumers pay an upfront subscription fee to a farm in exchange for a regular share of the harvest. Platforms like \textbf{Barn2Door} and \textbf{Local Food Marketplace} provide tools for managing CSA subscriptions, payments, and deliveries.
+    \item \textbf{Online Farmers' Markets:} These platforms act as a virtual marketplace where multiple farmers can list their products. Consumers can shop from various farmers and often have a single checkout process. \textbf{FarmDrop} and \textbf{Market Wagon} are examples of such platforms.
+    \item \textbf{General E-commerce Platforms:} Many farmers use general-purpose e-commerce platforms like \textbf{Shopify} or \textbf{WooCommerce} to build their own online stores. While these platforms are powerful and flexible, they may require significant customization to meet the specific needs of selling agricultural products (e.g., handling variable weights, managing perishable inventory).
+    \item \textbf{Direct-to-Consumer (D2C) Platforms:} Platforms like \textbf{Local Line} and \textbf{GrazeCart} are specifically designed for farmers to sell directly to consumers. They offer features like customizable storefronts, inventory management, and order fulfillment tools.
+\end{itemize}
+
+Our project, AgriNest, draws inspiration from these existing models. It combines the simplicity of a direct-to-consumer platform with the community-building features of an online farmers' market. A key differentiator for AgriNest is its emphasis on a user-friendly rating and review system. While many platforms have basic review functionalities, AgriNest integrates ratings as a core feature to foster trust and transparency, allowing consumers to make informed decisions and farmers to build a reputation based on quality.
+
+\section{Gaps / Findings}
+Our analysis of the existing landscape of farm-to-consumer platforms revealed several gaps and opportunities that AgriNest aims to address:
+
+\begin{itemize}
+    \item \textbf{Complexity and Cost:} Many of the existing platforms are feature-rich but can be complex and expensive for small-scale farmers who may not have the technical expertise or financial resources to use them effectively. There is a clear need for a lightweight, affordable, and easy-to-use solution.
+    \item \textbf{Lack of Community Focus:} While many platforms facilitate transactions, they often lack features that foster a sense of community between farmers and consumers. Features like social sharing, farmer profiles, and direct messaging can help build stronger relationships and a more loyal customer base.
+    \item \textbf{Limited Support for Mobile:} With the increasing use of smartphones, a mobile-first approach is essential. Many existing platforms have websites that are not fully optimized for mobile devices, which can lead to a poor user experience. AgriNest is designed with a responsive layout that works well on both desktop and mobile devices.
+    \item \textbf{Data and Analytics:} Small farmers can greatly benefit from data and analytics to understand customer behavior, track sales, and manage their inventory more effectively. Most basic platforms offer limited reporting capabilities. AgriNest has the potential to be extended with a comprehensive dashboard that provides valuable insights to farmers.
+\end{itemize}
+
+AgriNest is designed to be a simple, accessible, and community-focused platform. By focusing on the core functionalities required for a farm-to-consumer marketplace and by building a strong rating system, we believe AgriNest can provide a valuable service to both farmers and consumers.
+
+\section{Methodology}
+The methodology for this project involved a systematic approach to database design and application development. The process started with a detailed analysis of the requirements, followed by the design of the database schema, and finally the implementation of the application logic.
+
+\subsection{ER-Diagram}
+The Entity-Relationship (ER) diagram is a graphical representation of the entities in our database and the relationships between them. The main entities in the AgriNest system are:
+
+\begin{itemize}
+    \item \textbf{User}: Represents an individual who can be either a farmer or a consumer.
+    \item \textbf{Crop}: Represents a product listed by a farmer.
+    \item \textbf{Order}: Represents a purchase made by a consumer.
+    \item \textbf{Cart}: Represents a temporary storage for items a consumer intends to buy.
+    \item \textbf{Rating}: Represents the feedback provided by a consumer for a crop.
+\end{itemize}
+
+The relationships between these entities are crucial for the functioning of the marketplace:
+
+\begin{itemize}
+    \item A \textbf{one-to-many} relationship exists between \textbf{User} (as a farmer) and \textbf{Crop}, as a farmer can list multiple crops.
+    \item A \textbf{one-to-many} relationship exists between \textbf{User} (as a consumer) and \textbf{Order}, as a consumer can place multiple orders.
+    \item A \textbf{many-to-many} relationship exists between \textbf{Order} and \textbf{Crop}, which is implemented through a junction table called \textbf{order\_items}. An order can contain multiple crops, and a crop can be part of multiple orders.
+    \item A \textbf{one-to-many} relationship exists between \textbf{User} and \textbf{Cart}, as a user can have one shopping cart.
+    \item A \textbf{many-to-many} relationship exists between \textbf{User} and \textbf{Crop} for ratings, implemented through the \textbf{crop\_ratings} table. A user can rate multiple crops, and a crop can be rated by multiple users.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{ER-DBMS.png}
+    \caption{Entity-Relationship Diagram}
+    \label{fig:er_diagram}
+\end{figure}
+
+\subsection{Relations (Schema)}
+The relational schema is the blueprint of our database. It defines the tables, the columns in each table, the data types, and the constraints. The schema for AgriNest is designed to be normalized to reduce data redundancy and improve data integrity.
+
+\subsubsection{user\_credentials Table}
+This table stores the login and profile information for all users.
+
+\begin{itemize}
+    \item \texttt{id}: An auto-incrementing integer that serves as the primary key.
+    \item \texttt{name}: The name of the user (VARCHAR).
+    \item \texttt{email}: The user's email address, which is unique for each user (VARCHAR, UNIQUE).
+    \item \texttt{password}: The user's hashed password (VARCHAR).
+    \item \texttt{role}: An enumeration that can be either 'farmer' or 'consumer' (ENUM).
+    \item \texttt{created\_at}: A timestamp that records when the user account was created (TIMESTAMP).
+\end{itemize}
+
+\subsubsection{crops Table}
+This table contains the details of all the crops listed on the marketplace.
+
+\begin{itemize}
+    \item \texttt{id}: The primary key for the table (INT, AUTO\_INCREMENT).
+    \item \texttt{crop\_name}: The name of the crop (VARCHAR).
+    \item \texttt{quantity}: The available quantity of the crop in kilograms (INT).
+    \item \texttt{location}: The location where the crop is grown (VARCHAR).
+    \item \texttt{price}: The price per kilogram (DECIMAL).
+    \item \texttt{image\_url}: The URL of the crop's image (VARCHAR).
+    \item \texttt{farmer\_id}: A foreign key that references the \texttt{id} in the \texttt{user\_credentials} table, linking the crop to the farmer who listed it (INT, FOREIGN KEY).
+\end{itemize}
+
+\subsubsection{cart Table}
+This table stores the items that users have added to their shopping cart.
+
+\begin{itemize}
+    \item \texttt{id}: The primary key (INT, AUTO\_INCREMENT).
+    \item \texttt{user\_id}: A foreign key referencing the user who owns the cart (INT, FOREIGN KEY).
+    \item \texttt{crop\_id}: A foreign key referencing the crop added to the cart (INT, FOREIGN KEY).
+    \item \texttt{quantity}: The quantity of the crop in the cart (INT).
+\end{itemize}
+
+\subsubsection{orders Table}
+This table stores the header information for each order.
+
+\begin{itemize}
+    \item \texttt{id}: The primary key for the order (INT, AUTO\_INCREMENT).
+    \item \texttt{user\_id}: A foreign key referencing the user who placed the order (INT, FOREIGN KEY).
+    \item \texttt{total}: The total amount of the order (DECIMAL).
+    \item \texttt{created\_at}: A timestamp that records when the order was placed (TIMESTAMP).
+\end{itemize}
+
+\subsubsection{order\_items Table}
+This is a junction table that links the \texttt{orders} and \texttt{crops} tables.
+
+\begin{itemize}
+    \item \texttt{id}: The primary key (INT, AUTO\_INCREMENT).
+    \item \texttt{order\_id}: A foreign key referencing the order (INT, FOREIGN KEY).
+    \item \texttt{crop\_id}: A foreign key referencing the crop (INT, FOREIGN KEY).
+    \item \texttt{quantity}: The quantity of the crop purchased in the order (INT).
+    \item \texttt{price}: The price of the crop at the time of purchase (DECIMAL).
+    \item \texttt{delivery\_status}: The delivery status of the individual item, either 'pending' or 'delivered' (ENUM).
+\end{itemize}
+
+\subsubsection{crop\_ratings Table}
+This table stores the ratings given by users to crops.
+
+\begin{itemize}
+    \item \texttt{id}: The primary key (INT, AUTO\_INCREMENT).
+    \item \texttt{user\_id}: A foreign key referencing the user who gave the rating (INT, FOREIGN KEY).
+    \item \texttt{crop\_id}: A foreign key referencing the crop that was rated (INT, FOREIGN KEY).
+    \item \texttt{rating}: The rating value, from 1 to 5 (TINYINT).
+\end{itemize}
+
+\subsection{Operations (Queries)}
+The application performs various operations on the database using SQL queries. These queries are executed from the Node.js backend. Here is a more detailed look at some of the important queries.
+
+\subsubsection{User Authentication}
+User authentication is a critical part of the application. The following queries are used for user registration and login:
+
+\begin{lstlisting}[language=SQL, caption={User Authentication Queries}]
+-- Check if a user with the given email already exists
+SELECT * FROM user_credentials WHERE email = ?;
+
+-- Insert a new user into the database
+INSERT INTO user_credentials (name, email, password, role) VALUES (?, ?, ?, ?);
+
+-- Retrieve a user's details for login verification
+SELECT * FROM user_credentials WHERE email = ?;
+\end{lstlisting}
+
+\subsubsection{Product Catalog}
+The following queries are used to manage the product catalog:
+
+\begin{lstlisting}[language=SQL, caption={Product Catalog Queries}]
+-- Fetch all crops with their average rating and rating count
+SELECT c.id, c.crop_name, c.quantity, c.location, c.price, c.image_url,
+       COALESCE(r.avg_rating, 0) AS avg_rating,
+       COALESCE(r.rating_count, 0) AS rating_count
+FROM crops c
+LEFT JOIN (
+  SELECT crop_id, AVG(rating) AS avg_rating, COUNT(*) AS rating_count
+  FROM crop_ratings
+  GROUP BY crop_id
+) r ON r.crop_id = c.id;
+
+-- Add a new crop to the catalog
+INSERT INTO crops (crop_name, quantity, location, price, image_url, farmer_id) VALUES (?, ?, ?, ?, ?, ?);
+
+-- Update an existing crop
+UPDATE crops SET crop_name = ?, price = ?, quantity = ?, location = ? WHERE id = ? AND farmer_id = ?;
+
+-- Delete a crop from the catalog
+DELETE FROM crops WHERE id = ? AND farmer_id = ?;
+\end{lstlisting}
+
+\subsubsection{Checkout Process}
+The checkout process is a critical transaction that involves multiple database operations. To ensure data consistency, these operations are performed within a database transaction.
+
+\begin{lstlisting}[language=SQL, caption={Transactional Checkout Queries}]
+-- Start a new transaction
+BEGIN;
+
+-- For each item in the cart, lock the corresponding row in the crops table
+SELECT quantity, price FROM crops WHERE id = ? FOR UPDATE;
+
+-- Check if there is sufficient stock
+-- If yes, update the stock quantity
+UPDATE crops SET quantity = quantity - ? WHERE id = ?;
+
+-- After processing all items, create a new order
+INSERT INTO orders (user_id, total) VALUES (?, ?);
+
+-- Get the ID of the newly created order
+-- (Handled by the application logic)
+
+-- Insert the items into the order_items table
+INSERT INTO order_items (order_id, crop_id, quantity, price) VALUES (?, ?, ?, ?);
+
+-- If all operations are successful, commit the transaction
+COMMIT;
+
+-- If any operation fails, rollback the transaction
+ROLLBACK;
+\end{lstlisting}
+
+\subsubsection{Farmer Statistics}
+This query retrieves data for generating farmer statistics, including total income, items sold, and top-selling crops.
+
+\begin{lstlisting}[language=SQL, caption={Farmer Statistics Query}]
+SELECT
+  oi.price,
+  oi.quantity,
+  o.created_at,
+  c.crop_name
+FROM order_items oi
+JOIN crops c ON oi.crop_id = c.id
+JOIN orders o ON oi.order_id = o.id
+WHERE c.farmer_id = ? AND oi.delivery_status = 'delivered' AND o.created_at >= ?
+ORDER BY o.created_at ASC;
+\end{lstlisting}
+
+\section{Code / Logic}
+The backend of AgriNest is built with Node.js and the Express framework. The interaction with the MySQL database is handled by the `mysql2` library.
+
+\subsection{Adding a Crop}
+This function handles the API request to add a new crop. It uses `multer` to handle the image upload.
+
+\begin{lstlisting}[language=javascript, caption={Adding a new crop in Node.js}]
+// API to add a crop
+app.post('/api/crops', upload.single('image'), (req, res) => {
+  const { cropName, quantity, location, price, farmerId } = req.body;
+  const imageUrl = req.file ? `uploads/${req.file.filename}` : '';
+
+  if (!cropName || !quantity || !location || !price || !imageUrl) {
+    return res.status(400).json({ message: 'All fields, including image, are required' });
+  }
+
+  const query =
+    'INSERT INTO crops (crop_name, quantity, location, price, image_url, farmer_id) VALUES (?, ?, ?, ?, ?, ?)';
+  db.query(query, [cropName, Number(quantity), location, Number(price), imageUrl, Number(farmerId)], (err) => {
+    if (err) {
+      console.error('Error inserting crop data:', err);
+      return res.status(500).json({ message: 'Failed to add crop' });
+    }
+    res.status(200).json({ message: 'Crop added successfully' });
+  });
+});
+\end{lstlisting}
+
+\subsection{Fetching Products}
+This function retrieves the list of products, handling filtering and sorting.
+
+\begin{lstlisting}[language=javascript, caption={Fetching products with filters in Node.js}]
+// API to get all crops with search/filter/sort
+app.get('/api/crops', (req, res) => {
+  const { q, minPrice, maxPrice, sort, farmerId } = req.query || {};
+
+  // ... (code for building the WHERE clause and ORDER BY clause)
+
+  const base = `
+    SELECT c.id, c.crop_name, c.quantity, c.location, c.price, c.image_url,
+           COALESCE(r.avg_rating, 0) AS avg_rating,
+           COALESCE(r.rating_count, 0) AS rating_count
+    FROM crops c
+    LEFT JOIN (
+      SELECT crop_id, AVG(rating) AS avg_rating, COUNT(*) AS rating_count
+      FROM crop_ratings
+      GROUP BY crop_id
+    ) r ON r.crop_id = c.id`;
+  const sql = [
+    base,
+    where.length ? 'WHERE ' + where.map(w => w.replace(/\b(crop_name|location|price|farmer_id)\b/g, 'c.$1')).join(' AND ') : '',
+    'ORDER BY ' + orderBy,
+  ].filter(Boolean).join(' ');
+
+  db.query(sql, params, (err, results) => {
+    if (err) {
+      console.error('Error retrieving crops:', err);
+      return res.status(500).json({ message: 'Error retrieving crops' });
+    }
+    res.json(results);
+  });
+});
+\end{lstlisting}
+
+\section{Result}
+The culmination of this project is a fully functional web application that successfully implements the core features of a farmer-consumer marketplace.
+
+\subsection{Consumer Experience}
+Consumers can browse a catalog of produce, search and filter products, view details and ratings, add items to a cart, and place orders.
+
+\subsection{Farmer Experience}
+Farmers have a dedicated dashboard to manage product listings, track inventory, view sales and earnings statistics, and update the delivery status of items.
+
+\section{Conclusion & Future Work}
+This project has been a valuable exercise in database design and full-stack web development. The AgriNest platform serves as a solid proof of concept, enhanced with per-item delivery status tracking and a comprehensive farmer dashboard.
+
+Future work could include:
+\begin{itemize}
+    \item \textbf{Payment Gateway Integration:} Integrating a secure payment gateway like Stripe or PayPal.
+    \item \textbf{Real-time Notifications:} Using WebSockets for order status updates.
+    \item \textbf{Advanced Analytics:} Expanding the farmer dashboard with more advanced analytics.
+    \item \textbf{Mobile Application:} Developing native mobile applications for iOS and Android.
+    \item \textbf{Admin Panel:} A dedicated admin panel for platform management.
+    \item \textbf{Geospatial Features:} Integrating maps for finding local farmers.
+\end{itemize}
+
+In conclusion, the AgriNest project has provided a strong foundation in database management and web development, with potential for future expansion.
+
+% --- BIBLIOGRAPHY ---
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
